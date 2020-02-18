@@ -2,15 +2,45 @@ const config = require('config');
 const indexName = config.get('elasticsearch.index_name');
 
 exports.count = (client, from, to, callback) => {
-    // TODO Compter le nombre d'anomalies entre deux dates
-    callback({
-        count: 0
-    })
+    client
+        .count({
+            index: 'incidents',
+            body: {
+                query: {
+                    range: {
+                        timestamp: {
+                            gte: from,
+                            lt: to
+                        }
+
+                    }
+                }
+            }
+        })
+        .then(resp => console.log(callback({
+            count: resp.body.count
+        })));
+
 }
 
 exports.countAround = (client, lat, lon, radius, callback) => {
-    // TODO Compter le nombre d'anomalies autour d'un point géographique, dans un rayon donné
-    callback({
-        count: 0
-    })
+    client
+        .count({
+            index: 'incidents',
+            body: {
+                query: {
+                    "bool": {
+                        "filter": {
+                            "geo_distance": {
+                                "distance": radius,
+                                "location": [lon, lat]
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        .then(resp => callback({
+            count: resp.body.count
+        }), err => console.error(err.meta.body.error));
 }
